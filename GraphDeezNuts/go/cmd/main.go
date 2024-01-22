@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	// Adjacency list representation of the graph
 	graph [][]int
 )
 
@@ -69,18 +68,20 @@ func BFS(startNode int) {
 
 func DFS(startNode int) {
 	visited := make([]bool, len(graph))
-	runDFS(startNode, visited)
-}
 
-func runDFS(startNode int, visited []bool) {
-	visited[startNode] = true
-	fmt.Printf("-> Visited %d\n", startNode)
+	var runDFS func(int)
+	runDFS = func(node int) {
+		visited[node] = true
+		fmt.Printf("-> Visited %d\n", node)
 
-	for _, adjacent := range graph[startNode] {
-		if !visited[adjacent] {
-			runDFS(adjacent, visited)
+		for _, adjacent := range graph[node] {
+			if !visited[adjacent] {
+				runDFS(adjacent)
+			}
 		}
 	}
+
+	runDFS(startNode)
 }
 
 func Dijkstra(startNode int) {
@@ -152,9 +153,13 @@ func main() {
 	initGraph(numNodes, isDirected)
 
 	fmt.Println("1. Print graph")
-	fmt.Println("2. BFS")
-	fmt.Println("3. DFS")
-	fmt.Println("4. Dijkstra's Algorithm")
+	fmt.Println("2. Add node")
+	fmt.Println("3. Remove node")
+	fmt.Println("4. Add edge")
+	fmt.Println("5. Remove edge")
+	fmt.Println("6. BFS")
+	fmt.Println("7. DFS")
+	fmt.Println("8. Dijkstra's Algorithm")
 	fmt.Println("Enter option:")
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -173,6 +178,94 @@ func main() {
 			printNodes()
 
 		case 2:
+			graph = append(graph, []int{})
+			fmt.Printf("Added node")
+
+		case 3:
+			fmt.Println("Enter node:")
+			scanner.Scan()
+			node, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				fmt.Println("Invalid input, please enter a number.")
+				continue
+			}
+			if node >= len(graph) {
+				fmt.Println("Invalid node")
+				continue
+			}
+			graph = append(graph[:node], graph[node+1:]...)
+			fmt.Printf("Removed node %d\n", node)
+
+		case 4:
+			fmt.Println("Enter node 1:")
+			scanner.Scan()
+			node1, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				fmt.Println("Invalid input, please enter a number.")
+				continue
+			}
+			if node1 >= len(graph) {
+				fmt.Println("Invalid node")
+				continue
+			}
+
+			fmt.Println("Enter node 2:")
+			scanner.Scan()
+			node2, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				fmt.Println("Invalid input, please enter a number.")
+				continue
+			}
+			if node2 >= len(graph) {
+				fmt.Println("Invalid node")
+				continue
+			}
+			graph[node1] = append(graph[node1], node2)
+			if !isDirected {
+				graph[node2] = append(graph[node2], node1)
+			}
+
+		case 5:
+			fmt.Println("Enter node 1:")
+			scanner.Scan()
+			node1, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				fmt.Println("Invalid input, please enter a number.")
+				continue
+			}
+			if node1 >= len(graph) {
+				fmt.Println("Invalid node")
+				continue
+			}
+
+			fmt.Println("Enter node 2:")
+			scanner.Scan()
+			node2, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				fmt.Println("Invalid input, please enter a number.")
+				continue
+			}
+			if node2 >= len(graph) {
+				fmt.Println("Invalid node")
+				continue
+			}
+
+			for i, adjacent := range graph[node1] {
+				if adjacent == node2 {
+					graph[node1] = append(graph[node1][:i], graph[node1][i+1:]...)
+					break
+				}
+			}
+			if !isDirected {
+				for i, adjacent := range graph[node2] {
+					if adjacent == node1 {
+						graph[node2] = append(graph[node2][:i], graph[node2][i+1:]...)
+						break
+					}
+				}
+			}
+
+		case 6:
 			fmt.Println("Enter start node:")
 			scanner.Scan()
 			node, err := strconv.Atoi(scanner.Text())
@@ -183,7 +276,7 @@ func main() {
 			fmt.Printf("Running BFS from node %d:\n", node)
 			BFS(node)
 
-		case 3:
+		case 7:
 			fmt.Println("Enter start node:")
 			scanner.Scan()
 			node, err := strconv.Atoi(scanner.Text())
@@ -194,7 +287,7 @@ func main() {
 			fmt.Printf("Running DFS from node %d:\n", node)
 			DFS(node)
 
-		case 4:
+		case 8:
 			fmt.Println("Enter start node:")
 			scanner.Scan()
 			node, err := strconv.Atoi(scanner.Text())

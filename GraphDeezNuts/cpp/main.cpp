@@ -6,37 +6,54 @@
 class Graph {
 private:
   std::vector<std::vector<int>> adjacencyList;
-  bool isDirected;
 
-public:
-  Graph(int numNodes, bool isDirected)
-      : adjacencyList(numNodes), isDirected(isDirected) {
-    adjacencyList.resize(numNodes);
+protected:
+  void addEdgeToAdjacencyList(int from, int to) {
+    if (from < adjacencyList.size() && to < adjacencyList.size()) {
+      adjacencyList[from].push_back(to);
+    }
+  }
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 1);
-
-    for (int i = 0; i < numNodes; ++i) {
-      for (int j = 0; j < numNodes; ++j) {
-        if (i != j && dis(gen) == 1) {
-          addEdge(i, j);
-          if (!isDirected) {
-            addEdge(j, i);
-          }
+  void removeEdgeFromAdjacencyList(int from, int to) {
+    if (from < adjacencyList.size() && to < adjacencyList.size()) {
+      for (int i = 0; i < adjacencyList[from].size(); ++i) {
+        if (adjacencyList[from][i] == to) {
+          adjacencyList[from].erase(adjacencyList[from].begin() + i);
+          break;
         }
       }
     }
   }
 
-  void addEdge(int u, int v) {
-    if (u < adjacencyList.size() && v < adjacencyList.size()) {
-      adjacencyList[u].push_back(v);
-      if (!isDirected) {
-        adjacencyList[v].push_back(u);
+  void addNodeToAdjacencyList() { adjacencyList.push_back(std::vector<int>()); }
+
+  void removeNodeFromAdjacencyList(int node) {
+    if (node < adjacencyList.size()) {
+      for (int i = 0; i < adjacencyList.size(); ++i) {
+        for (int j = 0; j < adjacencyList[i].size(); ++j) {
+          if (adjacencyList[i][j] == node) {
+            adjacencyList[i].erase(adjacencyList[i].begin() + j);
+            break;
+          }
+        }
       }
+      adjacencyList.erase(adjacencyList.begin() + node);
     }
   }
+
+public:
+  Graph(int numNodes) : adjacencyList(numNodes) {
+    for (int i = 0; i < numNodes; ++i) {
+      adjacencyList[i] = std::vector<int>();
+    }
+  }
+
+  virtual ~Graph() {}
+
+  virtual void addEdge(int from, int to) = 0;
+  virtual void removeEdge(int from, int to) = 0;
+  virtual void addNode() = 0;
+  virtual void removeNode(int node) = 0;
 
   void printGraph() {
     for (int i = 0; i < adjacencyList.size(); ++i) {
@@ -126,6 +143,57 @@ private:
   }
 };
 
+class DirectedGraph : public Graph {
+public:
+  DirectedGraph(int numNodes) : Graph(numNodes) {
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 1);
+
+    for (int i = 0; i < numNodes; ++i) {
+      for (int j = 0; j < numNodes; ++j) {
+        if (i != j && dis(gen) == 1) {
+          addEdge(i, j);
+        }
+      }
+    }
+  }
+
+  void addEdge(int from, int to) override { addEdgeToAdjacencyList(from, to); }
+  void removeEdge(int from, int to) override {
+    removeEdgeFromAdjacencyList(from, to);
+  }
+  void addNode() override { addNodeToAdjacencyList(); }
+  void removeNode(int node) override { removeNodeFromAdjacencyList(node); }
+};
+
+class UndirectedGraph : public Graph {
+public:
+  UndirectedGraph(int numNodes) : Graph(numNodes) {
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 1);
+
+    for (int i = 0; i < numNodes; ++i) {
+      for (int j = 0; j < numNodes; ++j) {
+        if (i != j && dis(gen) == 1) {
+          addEdge(i, j);
+          addEdge(j, i);
+        }
+      }
+    }
+  }
+
+  void addEdge(int from, int to) override { addEdgeToAdjacencyList(from, to); }
+  void removeEdge(int from, int to) override {
+    removeEdgeFromAdjacencyList(from, to);
+  }
+  void addNode() override { addNodeToAdjacencyList(); }
+  void removeNode(int node) override { removeNodeFromAdjacencyList(node); }
+};
+
 int main() {
   std::string graphType;
   int numNodes, studentID = 20055710;
@@ -142,34 +210,75 @@ int main() {
   std::cin >> numNodes;
 
   bool isDirected = (graphType == "directed");
-  Graph graph(numNodes, isDirected);
+
+  Graph *graph;
+
+  if (isDirected) {
+    graph = new DirectedGraph(numNodes);
+  } else {
+    graph = new UndirectedGraph(numNodes);
+  }
 
   int option;
   while (true) {
     std::cout << "1. Print graph\n";
-    std::cout << "2. BFS\n";
-    std::cout << "3. DFS\n";
-    std::cout << "4. Dijkstra's Algorithm\n";
+    std::cout << "2. Add node\n";
+    std::cout << "3. Remove node\n";
+    std::cout << "4. Add edge\n";
+    std::cout << "5. Remove edge\n";
+    std::cout << "6. BFS\n";
+    std::cout << "7. DFS\n";
+    std::cout << "8. Dijkstra's Algorithm\n";
     std::cout << "Enter option: ";
     std::cin >> option;
 
     switch (option) {
+      int startNode;
     case 1:
-      graph.printGraph();
+      graph->printGraph();
       break;
     case 2:
-      graph.BFS(0);
+      graph->addNode();
       break;
     case 3:
-      graph.DFS(0);
+      std::cout << "Enter node: ";
+      std::cin >> startNode;
+      graph->removeNode(startNode);
       break;
     case 4:
-      graph.Dijkstra(0);
+      std::cout << "Enter from node: ";
+      std::cin >> startNode;
+      std::cout << "Enter to node: ";
+      std::cin >> option;
+      graph->addEdge(startNode, option);
+      break;
+    case 5:
+      std::cout << "Enter from node: ";
+      std::cin >> startNode;
+      std::cout << "Enter to node: ";
+      std::cin >> option;
+      graph->removeEdge(startNode, option);
+      break;
+    case 6:
+      std::cout << "Enter start node: ";
+      std::cin >> startNode;
+      graph->BFS(startNode);
+      break;
+    case 7:
+      std::cout << "Enter start node: ";
+      std::cin >> startNode;
+      graph->DFS(startNode);
+      break;
+    case 8:
+      std::cout << "Enter start node: ";
+      std::cin >> startNode;
+      graph->Dijkstra(startNode);
       break;
     default:
       std::cout << "Invalid option\n";
     }
   }
 
+  delete graph;
   return 0;
 }
